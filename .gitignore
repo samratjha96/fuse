@@ -26,6 +26,14 @@ dist-ssr
 # Playwright MCP
 .playwright-mcp/
 
+# Test fixtures (media files)
+tests/fixtures/*.mp4
+tests/fixtures/*.webm
+tests/fixtures/*.mov
+tests/fixtures/*.mp3
+tests/fixtures/*.wav
+tests/fixtures/*.ogg
+
 # Rust/WASM build artifacts
 wasm/*/target/
 wasm/*/pkg/
