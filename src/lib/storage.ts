@@ -23,17 +23,17 @@ let db: IDBDatabase | null = null;
 export async function initStorage(): Promise<void> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
+
     request.onerror = () => reject(request.error);
-    
+
     request.onsuccess = () => {
       db = request.result;
       resolve();
     };
-    
+
     request.onupgradeneeded = (event) => {
       const database = (event.target as IDBOpenDBRequest).result;
-      
+
       if (!database.objectStoreNames.contains(STORE_NAME)) {
         const store = database.createObjectStore(STORE_NAME, { keyPath: 'id' });
         store.createIndex('name', 'name', { unique: false });
@@ -48,10 +48,10 @@ export async function initStorage(): Promise<void> {
  */
 export async function storeFile(file: File): Promise<string> {
   if (!db) await initStorage();
-  
+
   const id = crypto.randomUUID();
   const arrayBuffer = await file.arrayBuffer();
-  
+
   const storedFile: StoredFile = {
     id,
     name: file.name,
@@ -60,12 +60,12 @@ export async function storeFile(file: File): Promise<string> {
     data: arrayBuffer,
     createdAt: Date.now(),
   };
-  
+
   return new Promise((resolve, reject) => {
     const transaction = db!.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.add(storedFile);
-    
+
     request.onsuccess = () => resolve(id);
     request.onerror = () => reject(request.error);
   });
@@ -76,12 +76,12 @@ export async function storeFile(file: File): Promise<string> {
  */
 export async function getFile(id: string): Promise<StoredFile | null> {
   if (!db) await initStorage();
-  
+
   return new Promise((resolve, reject) => {
     const transaction = db!.transaction([STORE_NAME], 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.get(id);
-    
+
     request.onsuccess = () => resolve(request.result || null);
     request.onerror = () => reject(request.error);
   });
@@ -100,12 +100,12 @@ export async function getFileData(id: string): Promise<ArrayBuffer | null> {
  */
 export async function deleteFile(id: string): Promise<void> {
   if (!db) await initStorage();
-  
+
   return new Promise((resolve, reject) => {
     const transaction = db!.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.delete(id);
-    
+
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
@@ -116,12 +116,12 @@ export async function deleteFile(id: string): Promise<void> {
  */
 export async function listFiles(): Promise<Omit<StoredFile, 'data'>[]> {
   if (!db) await initStorage();
-  
+
   return new Promise((resolve, reject) => {
     const transaction = db!.transaction([STORE_NAME], 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.getAll();
-    
+
     request.onsuccess = () => {
       const files = request.result.map(({ data: _, ...rest }) => rest);
       resolve(files);
@@ -135,12 +135,12 @@ export async function listFiles(): Promise<Omit<StoredFile, 'data'>[]> {
  */
 export async function clearStorage(): Promise<void> {
   if (!db) await initStorage();
-  
+
   return new Promise((resolve, reject) => {
     const transaction = db!.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.clear();
-    
+
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
@@ -159,4 +159,3 @@ export async function getStorageInfo(): Promise<{ used: number; available: numbe
   }
   return { used: 0, available: 0 };
 }
-

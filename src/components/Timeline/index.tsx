@@ -1,6 +1,6 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import type { Clip, Track } from '../../store/timeline';
 import { useTimelineStore } from '../../store/timeline';
-import type { Track, Clip } from '../../store/timeline';
 
 const TRACK_HEADER_WIDTH = 120;
 
@@ -12,7 +12,7 @@ export default function Timeline() {
   const scrollX = useTimelineStore((s) => s.scrollX);
   const isPlaying = useTimelineStore((s) => s.isPlaying);
   const selectedClipIds = useTimelineStore((s) => s.selectedClipIds);
-  
+
   const setCurrentTime = useTimelineStore((s) => s.setCurrentTime);
   const setZoom = useTimelineStore((s) => s.setZoom);
   const setScrollX = useTimelineStore((s) => s.setScrollX);
@@ -21,7 +21,7 @@ export default function Timeline() {
   const deselectAll = useTimelineStore((s) => s.deselectAll);
   const toggleTrackMute = useTimelineStore((s) => s.toggleTrackMute);
   const toggleTrackLock = useTimelineStore((s) => s.toggleTrackLock);
-  
+
   const timelineRef = useRef<HTMLDivElement>(null);
   const tracksContainerRef = useRef<HTMLDivElement>(null);
 
@@ -29,31 +29,40 @@ export default function Timeline() {
   const timelineWidth = Math.max((duration + 10) * zoom, 1000);
 
   // Handle wheel for horizontal scroll and zoom
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      setZoom(zoom * delta);
-    } else if (e.shiftKey) {
-      e.preventDefault();
-      setScrollX(scrollX + e.deltaY);
-    }
-  }, [zoom, scrollX, setZoom, setScrollX]);
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        setZoom(zoom * delta);
+      } else if (e.shiftKey) {
+        e.preventDefault();
+        setScrollX(scrollX + e.deltaY);
+      }
+    },
+    [zoom, scrollX, setZoom, setScrollX],
+  );
 
   // Handle click on timeline ruler to seek
-  const handleRulerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left + scrollX;
-    const time = x / zoom;
-    setCurrentTime(Math.max(0, time));
-  }, [scrollX, zoom, setCurrentTime]);
+  const handleRulerClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left + scrollX;
+      const time = x / zoom;
+      setCurrentTime(Math.max(0, time));
+    },
+    [scrollX, zoom, setCurrentTime],
+  );
 
   // Handle timeline background click to deselect
-  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      deselectAll();
-    }
-  }, [deselectAll]);
+  const handleTimelineClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) {
+        deselectAll();
+      }
+    },
+    [deselectAll],
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -61,7 +70,7 @@ export default function Timeline() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
-      
+
       switch (e.code) {
         case 'Space':
           e.preventDefault();
@@ -85,7 +94,7 @@ export default function Timeline() {
           break;
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPlaying, currentTime, duration, setIsPlaying, setCurrentTime]);
@@ -95,13 +104,13 @@ export default function Timeline() {
     const markers = [];
     const step = zoom > 50 ? 1 : zoom > 20 ? 5 : 10;
     const maxTime = Math.ceil(duration + 10);
-    
+
     for (let t = 0; t <= maxTime; t += step) {
       const x = t * zoom;
       if (x >= scrollX - 100 && x <= scrollX + 1200) {
         markers.push(
-          <div 
-            key={t} 
+          <div
+            key={t}
             className="absolute top-0 h-full flex flex-col items-start"
             style={{ left: x }}
           >
@@ -109,7 +118,7 @@ export default function Timeline() {
               {formatTime(t)}
             </span>
             <div className="w-px h-2 bg-[var(--fuse-bg-tertiary)]" />
-          </div>
+          </div>,
         );
       }
     }
@@ -127,20 +136,20 @@ export default function Timeline() {
           >
             {isPlaying ? (
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             ) : (
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
+                <path d="M8 5v14l11-7z" />
               </svg>
             )}
           </button>
-          
+
           <div className="text-sm font-mono text-[var(--fuse-text-primary)]">
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span className="text-xs text-[var(--fuse-text-secondary)]">Zoom</span>
           <input
@@ -157,17 +166,17 @@ export default function Timeline() {
       {/* Timeline Body */}
       <div className="flex-1 flex min-h-0">
         {/* Track Headers */}
-        <div 
+        <div
           className="flex-shrink-0 bg-[var(--fuse-bg-secondary)] border-r border-[var(--fuse-bg-tertiary)]"
           style={{ width: TRACK_HEADER_WIDTH }}
         >
           {/* Ruler header spacer */}
           <div className="h-6 border-b border-[var(--fuse-bg-tertiary)]" />
-          
+
           {/* Track headers */}
           {tracks.map((track) => (
-            <TrackHeader 
-              key={track.id} 
+            <TrackHeader
+              key={track.id}
               track={track}
               onToggleMute={() => toggleTrackMute(track.id)}
               onToggleLock={() => toggleTrackLock(track.id)}
@@ -176,7 +185,7 @@ export default function Timeline() {
         </div>
 
         {/* Scrollable Timeline Area */}
-        <div 
+        <div
           ref={timelineRef}
           className="flex-1 overflow-x-auto overflow-y-hidden"
           onWheel={handleWheel}
@@ -184,7 +193,7 @@ export default function Timeline() {
         >
           <div style={{ width: timelineWidth, minWidth: '100%' }}>
             {/* Time Ruler */}
-            <div 
+            <div
               className="h-6 relative bg-[var(--fuse-bg-primary)] border-b border-[var(--fuse-bg-tertiary)] cursor-pointer"
               onClick={handleRulerClick}
             >
@@ -192,11 +201,7 @@ export default function Timeline() {
             </div>
 
             {/* Tracks */}
-            <div 
-              ref={tracksContainerRef}
-              className="relative"
-              onClick={handleTimelineClick}
-            >
+            <div ref={tracksContainerRef} className="relative" onClick={handleTimelineClick}>
               {tracks.map((track) => (
                 <TrackRow
                   key={track.id}
@@ -208,7 +213,7 @@ export default function Timeline() {
               ))}
 
               {/* Playhead */}
-              <div 
+              <div
                 className="absolute top-0 bottom-0 w-0.5 bg-[var(--fuse-playhead)] pointer-events-none z-20"
                 style={{ left: currentTime * zoom }}
               >
@@ -236,14 +241,12 @@ function TrackHeader({ track, onToggleMute, onToggleLock }: TrackHeaderProps) {
   };
 
   return (
-    <div 
+    <div
       className="flex items-center gap-2 px-2 border-b border-[var(--fuse-bg-tertiary)]"
       style={{ height: track.height }}
     >
       <div className={`w-2 h-2 rounded-full ${typeColors[track.type]}`} />
-      <span className="flex-1 text-xs text-[var(--fuse-text-primary)] truncate">
-        {track.name}
-      </span>
+      <span className="flex-1 text-xs text-[var(--fuse-text-primary)] truncate">{track.name}</span>
       <div className="flex gap-1">
         <button
           onClick={onToggleMute}
@@ -283,7 +286,7 @@ function TrackRow({ track, zoom, selectedClipIds, onClipClick }: TrackRowProps) 
   };
 
   return (
-    <div 
+    <div
       className="relative border-b border-[var(--fuse-bg-tertiary)]"
       style={{ height: track.height, background: 'var(--fuse-timeline-track)' }}
     >
@@ -318,8 +321,8 @@ function ClipBlock({ clip, zoom, color, isSelected, onClick }: ClipBlockProps) {
       className={`absolute top-1 bottom-1 rounded cursor-pointer transition-all ${color} ${
         isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--fuse-timeline-track)]' : ''
       }`}
-      style={{ 
-        left, 
+      style={{
+        left,
         width: Math.max(width, 4),
         opacity: 0.9,
       }}
@@ -331,7 +334,7 @@ function ClipBlock({ clip, zoom, color, isSelected, onClick }: ClipBlockProps) {
       <div className="px-2 py-1 text-[10px] text-white truncate font-medium">
         {clip.type === 'text' ? clip.text || 'Text' : `Clip`}
       </div>
-      
+
       {/* Trim handles */}
       <div className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-white/30 rounded-l" />
       <div className="absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-white/30 rounded-r" />
@@ -345,4 +348,3 @@ function formatTime(seconds: number): string {
   const frames = Math.floor((seconds % 1) * 30);
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
 }
-

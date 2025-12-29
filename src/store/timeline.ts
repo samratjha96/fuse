@@ -47,20 +47,20 @@ export interface TimelineState {
   // Timeline data
   tracks: Track[];
   sources: SourceFile[];
-  
+
   // Playback state
   currentTime: number;
   duration: number;
   isPlaying: boolean;
-  
+
   // Selection state
   selectedClipIds: string[];
   selectedTrackId: string | null;
-  
+
   // Zoom/scroll
   zoom: number; // Pixels per second
   scrollX: number;
-  
+
   // Actions
   addTrack: (type: ClipType, name?: string) => string;
   removeTrack: (trackId: string) => void;
@@ -69,20 +69,20 @@ export interface TimelineState {
   removeClip: (clipId: string) => void;
   moveClip: (clipId: string, newTrackId: string, newStartTime: number) => void;
   splitClip: (clipId: string, splitTime: number) => void;
-  
+
   addSource: (source: Omit<SourceFile, 'id'>) => string;
   removeSource: (sourceId: string) => void;
-  
+
   setCurrentTime: (time: number) => void;
   setIsPlaying: (playing: boolean) => void;
   setDuration: (duration: number) => void;
-  
+
   selectClip: (clipId: string, multi?: boolean) => void;
   deselectAll: () => void;
-  
+
   setZoom: (zoom: number) => void;
   setScrollX: (scrollX: number) => void;
-  
+
   toggleTrackMute: (trackId: string) => void;
   toggleTrackLock: (trackId: string) => void;
 }
@@ -106,9 +106,9 @@ export const useTimelineStore = create<TimelineState>()(
     addTrack: (type, name) => {
       const id = generateId();
       const defaultNames = { video: 'Video', audio: 'Audio', text: 'Text' };
-      const trackCount = get().tracks.filter(t => t.type === type).length;
-      
-      set(state => {
+      const trackCount = get().tracks.filter((t) => t.type === type).length;
+
+      set((state) => {
         state.tracks.push({
           id,
           type,
@@ -119,40 +119,42 @@ export const useTimelineStore = create<TimelineState>()(
           height: type === 'text' ? 40 : 60,
         });
       });
-      
+
       return id;
     },
 
     removeTrack: (trackId) => {
-      set(state => {
-        state.tracks = state.tracks.filter(t => t.id !== trackId);
+      set((state) => {
+        state.tracks = state.tracks.filter((t) => t.id !== trackId);
       });
     },
 
     // Clip actions
     addClip: (clip) => {
       const id = generateId();
-      
-      set(state => {
-        const track = state.tracks.find(t => t.id === clip.trackId);
+
+      set((state) => {
+        const track = state.tracks.find((t) => t.id === clip.trackId);
         if (track) {
           track.clips.push({ ...clip, id });
         }
       });
-      
+
       // Update duration if needed
       const endTime = clip.startTime + clip.duration;
       if (endTime > get().duration) {
-        set(state => { state.duration = endTime; });
+        set((state) => {
+          state.duration = endTime;
+        });
       }
-      
+
       return id;
     },
 
     updateClip: (clipId, updates) => {
-      set(state => {
+      set((state) => {
         for (const track of state.tracks) {
-          const clip = track.clips.find(c => c.id === clipId);
+          const clip = track.clips.find((c) => c.id === clipId);
           if (clip) {
             Object.assign(clip, updates);
             break;
@@ -162,31 +164,31 @@ export const useTimelineStore = create<TimelineState>()(
     },
 
     removeClip: (clipId) => {
-      set(state => {
+      set((state) => {
         for (const track of state.tracks) {
-          track.clips = track.clips.filter(c => c.id !== clipId);
+          track.clips = track.clips.filter((c) => c.id !== clipId);
         }
-        state.selectedClipIds = state.selectedClipIds.filter(id => id !== clipId);
+        state.selectedClipIds = state.selectedClipIds.filter((id) => id !== clipId);
       });
     },
 
     moveClip: (clipId, newTrackId, newStartTime) => {
-      set(state => {
+      set((state) => {
         let clipToMove: Clip | undefined;
-        
+
         // Find and remove from current track
         for (const track of state.tracks) {
-          const clipIndex = track.clips.findIndex(c => c.id === clipId);
+          const clipIndex = track.clips.findIndex((c) => c.id === clipId);
           if (clipIndex !== -1) {
             clipToMove = track.clips[clipIndex];
             track.clips.splice(clipIndex, 1);
             break;
           }
         }
-        
+
         // Add to new track
         if (clipToMove) {
-          const newTrack = state.tracks.find(t => t.id === newTrackId);
+          const newTrack = state.tracks.find((t) => t.id === newTrackId);
           if (newTrack && newTrack.type === clipToMove.type) {
             clipToMove.trackId = newTrackId;
             clipToMove.startTime = Math.max(0, newStartTime);
@@ -197,13 +199,13 @@ export const useTimelineStore = create<TimelineState>()(
     },
 
     splitClip: (clipId, splitTime) => {
-      set(state => {
+      set((state) => {
         for (const track of state.tracks) {
-          const clipIndex = track.clips.findIndex(c => c.id === clipId);
+          const clipIndex = track.clips.findIndex((c) => c.id === clipId);
           if (clipIndex !== -1) {
             const clip = track.clips[clipIndex];
             const relativeTime = splitTime - clip.startTime;
-            
+
             if (relativeTime > 0 && relativeTime < clip.duration) {
               // Create second clip
               const newClip: Clip = {
@@ -213,11 +215,11 @@ export const useTimelineStore = create<TimelineState>()(
                 duration: clip.duration - relativeTime,
                 inPoint: clip.inPoint + relativeTime,
               };
-              
+
               // Modify first clip
               clip.duration = relativeTime;
               clip.outPoint = clip.inPoint + relativeTime;
-              
+
               // Insert new clip
               track.clips.splice(clipIndex + 1, 0, newClip);
             }
@@ -230,41 +232,47 @@ export const useTimelineStore = create<TimelineState>()(
     // Source actions
     addSource: (source) => {
       const id = generateId();
-      set(state => {
+      set((state) => {
         state.sources.push({ ...source, id });
       });
       return id;
     },
 
     removeSource: (sourceId) => {
-      set(state => {
-        state.sources = state.sources.filter(s => s.id !== sourceId);
+      set((state) => {
+        state.sources = state.sources.filter((s) => s.id !== sourceId);
         // Remove all clips using this source
         for (const track of state.tracks) {
-          track.clips = track.clips.filter(c => c.sourceId !== sourceId);
+          track.clips = track.clips.filter((c) => c.sourceId !== sourceId);
         }
       });
     },
 
     // Playback actions
     setCurrentTime: (time) => {
-      set(state => { state.currentTime = Math.max(0, time); });
+      set((state) => {
+        state.currentTime = Math.max(0, time);
+      });
     },
 
     setIsPlaying: (playing) => {
-      set(state => { state.isPlaying = playing; });
+      set((state) => {
+        state.isPlaying = playing;
+      });
     },
 
     setDuration: (duration) => {
-      set(state => { state.duration = duration; });
+      set((state) => {
+        state.duration = duration;
+      });
     },
 
     // Selection actions
     selectClip: (clipId, multi = false) => {
-      set(state => {
+      set((state) => {
         if (multi) {
           if (state.selectedClipIds.includes(clipId)) {
-            state.selectedClipIds = state.selectedClipIds.filter(id => id !== clipId);
+            state.selectedClipIds = state.selectedClipIds.filter((id) => id !== clipId);
           } else {
             state.selectedClipIds.push(clipId);
           }
@@ -275,7 +283,7 @@ export const useTimelineStore = create<TimelineState>()(
     },
 
     deselectAll: () => {
-      set(state => {
+      set((state) => {
         state.selectedClipIds = [];
         state.selectedTrackId = null;
       });
@@ -283,27 +291,30 @@ export const useTimelineStore = create<TimelineState>()(
 
     // Zoom/scroll actions
     setZoom: (zoom) => {
-      set(state => { state.zoom = Math.max(10, Math.min(500, zoom)); });
+      set((state) => {
+        state.zoom = Math.max(10, Math.min(500, zoom));
+      });
     },
 
     setScrollX: (scrollX) => {
-      set(state => { state.scrollX = Math.max(0, scrollX); });
+      set((state) => {
+        state.scrollX = Math.max(0, scrollX);
+      });
     },
 
     // Track toggle actions
     toggleTrackMute: (trackId) => {
-      set(state => {
-        const track = state.tracks.find(t => t.id === trackId);
+      set((state) => {
+        const track = state.tracks.find((t) => t.id === trackId);
         if (track) track.muted = !track.muted;
       });
     },
 
     toggleTrackLock: (trackId) => {
-      set(state => {
-        const track = state.tracks.find(t => t.id === trackId);
+      set((state) => {
+        const track = state.tracks.find((t) => t.id === trackId);
         if (track) track.locked = !track.locked;
       });
     },
-  }))
+  })),
 );
-

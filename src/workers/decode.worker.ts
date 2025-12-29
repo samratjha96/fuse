@@ -3,8 +3,8 @@
  * Handles demuxing and decoding video files using mp4box.js and WebCodecs
  */
 
+import type { MP4ArrayBuffer, MP4File, MP4Info, MP4Sample, MP4Track } from 'mp4box';
 import * as MP4Box from 'mp4box';
-import type { MP4File, MP4Info, MP4Sample, MP4ArrayBuffer, MP4Track } from 'mp4box';
 
 interface WorkerMessage {
   type: 'decode' | 'seek' | 'stop' | 'extractThumbnail';
@@ -47,18 +47,25 @@ interface ErrorMessage {
 }
 
 // Union type for all outgoing messages
-export type OutgoingMessage = DecodedFrameMessage | VideoInfoMessage | ThumbnailMessage | ErrorMessage;
+export type OutgoingMessage =
+  | DecodedFrameMessage
+  | VideoInfoMessage
+  | ThumbnailMessage
+  | ErrorMessage;
 
 // State for active decode sessions
-const decodeSessions = new Map<string, {
-  mp4File: MP4File;
-  videoDecoder: VideoDecoder | null;
-  audioDecoder: AudioDecoder | null;
-  videoTrack: MP4Track | null;
-  audioTrack: MP4Track | null;
-  offset: number;
-  pendingFrames: Map<number, VideoFrame>;
-}>();
+const decodeSessions = new Map<
+  string,
+  {
+    mp4File: MP4File;
+    videoDecoder: VideoDecoder | null;
+    audioDecoder: AudioDecoder | null;
+    videoTrack: MP4Track | null;
+    audioTrack: MP4Track | null;
+    offset: number;
+    pendingFrames: Map<number, VideoFrame>;
+  }
+>();
 
 self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
   const { type, id, data, time } = e.data;
@@ -85,7 +92,7 @@ async function handleDecode(id: string, data: ArrayBuffer): Promise<void> {
     let videoTrack: MP4Track | null = null;
     let audioTrack: MP4Track | null = null;
     let videoDecoder: VideoDecoder | null = null;
-    
+
     const session = {
       mp4File,
       videoDecoder: null as VideoDecoder | null,
@@ -193,7 +200,6 @@ async function handleDecode(id: string, data: ArrayBuffer): Promise<void> {
     buffer.fileStart = 0;
     mp4File.appendBuffer(buffer);
     mp4File.flush();
-
   } catch (err) {
     postError(id, `Decode error: ${err}`);
   }
@@ -207,12 +213,12 @@ async function handleSeek(id: string, time: number): Promise<void> {
   }
 
   const { mp4File, videoDecoder } = session;
-  
+
   if (videoDecoder) {
     // Reset decoder for seek
     await videoDecoder.flush();
   }
-  
+
   // Seek in demuxer
   mp4File.seek(time, true);
 }
@@ -222,17 +228,17 @@ function handleStop(id: string): void {
   if (!session) return;
 
   const { mp4File, videoDecoder, audioDecoder } = session;
-  
+
   mp4File.stop();
-  
+
   if (videoDecoder && videoDecoder.state !== 'closed') {
     videoDecoder.close();
   }
-  
+
   if (audioDecoder && audioDecoder.state !== 'closed') {
     audioDecoder.close();
   }
-  
+
   decodeSessions.delete(id);
 }
 
@@ -283,9 +289,9 @@ async function handleExtractThumbnail(id: string, data: ArrayBuffer): Promise<vo
         codedHeight: videoTrack.video?.height || videoTrack.track_height,
       });
 
-      mp4File.setExtractionOptions(videoTrack.id, 'video', { 
+      mp4File.setExtractionOptions(videoTrack.id, 'video', {
         nbSamples: 1,
-        rapAlignment: true // Get keyframe only
+        rapAlignment: true, // Get keyframe only
       });
       mp4File.start();
     };
@@ -294,7 +300,7 @@ async function handleExtractThumbnail(id: string, data: ArrayBuffer): Promise<vo
       if (!videoDecoder || thumbnailExtracted) return;
 
       const sample = samples[0];
-      if (sample && sample.is_sync) {
+      if (sample?.is_sync) {
         const chunk = new EncodedVideoChunk({
           type: 'key',
           timestamp: (sample.cts / sample.timescale) * 1_000_000,
@@ -313,7 +319,6 @@ async function handleExtractThumbnail(id: string, data: ArrayBuffer): Promise<vo
     buffer.fileStart = 0;
     mp4File.appendBuffer(buffer);
     mp4File.flush();
-
   } catch (err) {
     postError(id, `Thumbnail extraction error: ${err}`);
   }
@@ -323,4 +328,3 @@ function postError(id: string, error: string): void {
   const msg: ErrorMessage = { type: 'error', id, error };
   self.postMessage(msg);
 }
-

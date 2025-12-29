@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
-import { useTimelineStore } from '../../store/timeline';
+import { useCallback, useState } from 'react';
 import type { Clip } from '../../store/timeline';
+import { useTimelineStore } from '../../store/timeline';
 
 const FONT_FAMILIES = [
   { name: 'Sans Serif', value: 'sans-serif' },
@@ -13,8 +13,16 @@ const FONT_FAMILIES = [
 const FONT_SIZES = [24, 32, 48, 64, 72, 96, 128];
 
 const COLORS = [
-  '#ffffff', '#000000', '#f97316', '#ef4444', '#22c55e', 
-  '#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4',
+  '#ffffff',
+  '#000000',
+  '#f97316',
+  '#ef4444',
+  '#22c55e',
+  '#3b82f6',
+  '#a855f7',
+  '#ec4899',
+  '#eab308',
+  '#06b6d4',
 ];
 
 interface TextOverlayEditorProps {
@@ -26,39 +34,51 @@ export default function TextOverlayEditor({ clipId }: TextOverlayEditorProps) {
   const updateClip = useTimelineStore((s) => s.updateClip);
   const addClip = useTimelineStore((s) => s.addClip);
   const currentTime = useTimelineStore((s) => s.currentTime);
-  
+
   const [newText, setNewText] = useState('');
 
   // Find the selected clip
-  const selectedClip: Clip | null = clipId 
-    ? tracks.flatMap(t => t.clips).find(c => c.id === clipId) || null
+  const selectedClip: Clip | null = clipId
+    ? tracks.flatMap((t) => t.clips).find((c) => c.id === clipId) || null
     : null;
 
-  const handleTextChange = useCallback((text: string) => {
-    if (!clipId) return;
-    updateClip(clipId, { text });
-  }, [clipId, updateClip]);
+  const handleTextChange = useCallback(
+    (text: string) => {
+      if (!clipId) return;
+      updateClip(clipId, { text });
+    },
+    [clipId, updateClip],
+  );
 
-  const handleFontChange = useCallback((fontFamily: string) => {
-    if (!clipId) return;
-    updateClip(clipId, { fontFamily });
-  }, [clipId, updateClip]);
+  const handleFontChange = useCallback(
+    (fontFamily: string) => {
+      if (!clipId) return;
+      updateClip(clipId, { fontFamily });
+    },
+    [clipId, updateClip],
+  );
 
-  const handleSizeChange = useCallback((fontSize: number) => {
-    if (!clipId) return;
-    updateClip(clipId, { fontSize });
-  }, [clipId, updateClip]);
+  const handleSizeChange = useCallback(
+    (fontSize: number) => {
+      if (!clipId) return;
+      updateClip(clipId, { fontSize });
+    },
+    [clipId, updateClip],
+  );
 
-  const handleColorChange = useCallback((color: string) => {
-    if (!clipId) return;
-    updateClip(clipId, { color });
-  }, [clipId, updateClip]);
+  const handleColorChange = useCallback(
+    (color: string) => {
+      if (!clipId) return;
+      updateClip(clipId, { color });
+    },
+    [clipId, updateClip],
+  );
 
   const handleAddText = useCallback(() => {
     if (!newText.trim()) return;
 
     // Find text track
-    const textTrack = tracks.find(t => t.type === 'text');
+    const textTrack = tracks.find((t) => t.type === 'text');
     if (!textTrack) return;
 
     addClip({
@@ -83,7 +103,7 @@ export default function TextOverlayEditor({ clipId }: TextOverlayEditorProps) {
     return (
       <div className="space-y-4">
         <h3 className="text-sm font-medium text-[var(--fuse-text-primary)]">Add Text Overlay</h3>
-        
+
         <div className="space-y-2">
           <input
             type="text"
@@ -95,7 +115,7 @@ export default function TextOverlayEditor({ clipId }: TextOverlayEditorProps) {
               if (e.key === 'Enter') handleAddText();
             }}
           />
-          
+
           <button
             onClick={handleAddText}
             disabled={!newText.trim()}
@@ -104,7 +124,7 @@ export default function TextOverlayEditor({ clipId }: TextOverlayEditorProps) {
             Add to Timeline
           </button>
         </div>
-        
+
         <p className="text-xs text-[var(--fuse-text-secondary)]">
           Text will be added at the current playhead position.
         </p>
@@ -115,7 +135,7 @@ export default function TextOverlayEditor({ clipId }: TextOverlayEditorProps) {
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-medium text-[var(--fuse-text-primary)]">Edit Text Overlay</h3>
-      
+
       {/* Text Input */}
       <div className="space-y-1">
         <label className="text-xs text-[var(--fuse-text-secondary)]">Text</label>
@@ -183,7 +203,7 @@ export default function TextOverlayEditor({ clipId }: TextOverlayEditorProps) {
             />
           ))}
         </div>
-        
+
         {/* Custom color input */}
         <div className="flex items-center gap-2 mt-2">
           <input
@@ -214,7 +234,7 @@ export default function TextOverlayEditor({ clipId }: TextOverlayEditorProps) {
           value={selectedClip.duration}
           onChange={(e) => {
             if (clipId) {
-              updateClip(clipId, { 
+              updateClip(clipId, {
                 duration: Number(e.target.value),
                 outPoint: Number(e.target.value),
               });
@@ -226,4 +246,3 @@ export default function TextOverlayEditor({ clipId }: TextOverlayEditorProps) {
     </div>
   );
 }
-

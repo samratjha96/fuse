@@ -72,37 +72,33 @@ declare module 'mp4box' {
     onReady: (info: MP4Info) => void;
     onError: (error: Error) => void;
     onSamples: (trackId: number, user: unknown, samples: MP4Sample[]) => void;
-    
+
     appendBuffer: (buffer: MP4ArrayBuffer) => number;
     start: () => void;
     stop: () => void;
     flush: () => void;
     seek: (time: number, useRap?: boolean) => { offset: number; time: number };
-    
+
     setExtractionOptions: (
       trackId: number,
       user?: unknown,
-      options?: { nbSamples?: number; rapAlignment?: boolean }
+      options?: { nbSamples?: number; rapAlignment?: boolean },
     ) => void;
-    
+
     getTrackById: (trackId: number) => MP4Track | undefined;
     getInfo: () => MP4Info;
-    
+
     releaseUsedSamples: (trackId: number, sampleNumber: number) => void;
   }
 
   export function createFile(): MP4File;
-  
+
   export class DataStream {
     static BIG_ENDIAN: boolean;
     static LITTLE_ENDIAN: boolean;
-    
-    constructor(
-      arrayBuffer?: ArrayBuffer,
-      byteOffset?: number,
-      endianness?: boolean
-    );
-    
+
+    constructor(arrayBuffer?: ArrayBuffer, byteOffset?: number, endianness?: boolean);
+
     getPosition(): number;
     setPosition(pos: number): void;
     readUint8(): number;
@@ -111,4 +107,3 @@ declare module 'mp4box' {
     readString(length: number): string;
   }
 }
-

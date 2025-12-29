@@ -72,7 +72,7 @@ export async function isAudioCodecSupported(codec: string): Promise<boolean> {
  */
 export function createVideoDecoder(
   onFrame: (frame: VideoFrame, metadata: { timestamp: number }) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
 ): VideoDecoder {
   return new VideoDecoder({
     output: (frame) => {
@@ -87,7 +87,7 @@ export function createVideoDecoder(
  */
 export function createAudioDecoder(
   onData: (data: AudioData) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
 ): AudioDecoder {
   return new AudioDecoder({
     output: onData,
@@ -104,7 +104,7 @@ export async function createVideoEncoder(
   frameRate: number,
   bitrate: number,
   onChunk: (chunk: EncodedVideoChunk, metadata?: EncodedVideoChunkMetadata) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
 ): Promise<VideoEncoder> {
   const encoder = new VideoEncoder({
     output: onChunk,
@@ -138,7 +138,7 @@ export async function createAudioEncoder(
   channels: number,
   bitrate: number,
   onChunk: (chunk: EncodedAudioChunk, metadata?: EncodedAudioChunkMetadata) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
 ): Promise<AudioEncoder> {
   const encoder = new AudioEncoder({
     output: onChunk,
@@ -166,7 +166,7 @@ export async function createAudioEncoder(
  */
 export async function extractFrameAtTime(
   _decoder: VideoDecoder,
-  timestamp: number
+  timestamp: number,
 ): Promise<VideoFrame | null> {
   // This is a placeholder - actual implementation requires seeking in the demuxer
   console.log('Extracting frame at', timestamp);
@@ -184,9 +184,10 @@ export async function frameToImageBitmap(frame: VideoFrame): Promise<ImageBitmap
 /**
  * Get video encoder configurations for common presets
  */
-export function getEncoderPreset(
-  preset: 'low' | 'medium' | 'high' | 'ultra'
-): { videoBitrate: number; audioBitrate: number } {
+export function getEncoderPreset(preset: 'low' | 'medium' | 'high' | 'ultra'): {
+  videoBitrate: number;
+  audioBitrate: number;
+} {
   const presets = {
     low: { videoBitrate: 2_000_000, audioBitrate: 128_000 },
     medium: { videoBitrate: 5_000_000, audioBitrate: 192_000 },
@@ -195,4 +196,3 @@ export function getEncoderPreset(
   };
   return presets[preset];
 }
-

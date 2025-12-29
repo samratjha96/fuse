@@ -2,8 +2,8 @@
  * Video demuxer using mp4box.js
  */
 
+import type { MP4ArrayBuffer, MP4File, MP4Info, MP4Sample, MP4Track } from 'mp4box';
 import * as MP4Box from 'mp4box';
-import type { MP4File, MP4Info, MP4Sample, MP4ArrayBuffer, MP4Track } from 'mp4box';
 
 export interface DemuxerCallbacks {
   onInfo: (info: VideoInfo) => void;
@@ -72,7 +72,7 @@ export class Demuxer {
   private setupCallbacks(): void {
     this.mp4File.onReady = (fileInfo: MP4Info) => {
       this._info = fileInfo;
-      
+
       // Find video track
       this.videoTrack = fileInfo.videoTracks[0] || null;
       this.audioTrack = fileInfo.audioTracks[0] || null;
@@ -90,7 +90,8 @@ export class Demuxer {
         audioCodec: this.audioTrack?.codec || null,
         videoTrackId: this.videoTrack.id,
         audioTrackId: this.audioTrack?.id || null,
-        frameRate: this.videoTrack.nb_samples / (this.videoTrack.duration / this.videoTrack.timescale),
+        frameRate:
+          this.videoTrack.nb_samples / (this.videoTrack.duration / this.videoTrack.timescale),
         sampleRate: this.audioTrack?.audio?.sample_rate || null,
         channels: this.audioTrack?.audio?.channel_count || null,
       };
@@ -209,14 +210,11 @@ export class Demuxer {
 /**
  * Demux a complete file
  */
-export async function demuxFile(
-  file: File,
-  callbacks: DemuxerCallbacks
-): Promise<void> {
+export async function demuxFile(file: File, callbacks: DemuxerCallbacks): Promise<void> {
   const demuxer = new Demuxer(callbacks);
-  
+
   const reader = file.stream().getReader();
-  
+
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -228,4 +226,3 @@ export async function demuxFile(
     callbacks.onError(error as Error);
   }
 }
-

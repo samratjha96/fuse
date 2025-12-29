@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useTimelineStore } from '../../store/timeline';
 import { getEncoderPreset } from '../../lib/webcodecs';
+import { useTimelineStore } from '../../store/timeline';
 
 interface ExportDialogProps {
   onClose: () => void;
@@ -21,7 +21,7 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
   const [frameRate, setFrameRate] = useState(30);
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState(0);
-  
+
   const duration = useTimelineStore((s) => s.duration);
   const tracks = useTimelineStore((s) => s.tracks);
 
@@ -29,7 +29,7 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
   const res = RESOLUTIONS[resolution];
 
   const estimatedSize = Math.round(
-    (preset.videoBitrate + preset.audioBitrate) * duration / 8 / 1024 / 1024
+    ((preset.videoBitrate + preset.audioBitrate) * duration) / 8 / 1024 / 1024,
   );
 
   const handleExport = async () => {
@@ -38,7 +38,7 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
 
     // Simulate export progress (actual implementation would use WebCodecs + WASM muxer)
     const totalFrames = Math.ceil(duration * frameRate);
-    
+
     for (let frame = 0; frame <= totalFrames; frame++) {
       await new Promise((resolve) => setTimeout(resolve, 10));
       setProgress((frame / totalFrames) * 100);
@@ -69,8 +69,18 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--fuse-bg-tertiary)] transition-colors"
           >
-            <svg className="w-5 h-5 text-[var(--fuse-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5 text-[var(--fuse-text-secondary)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -81,7 +91,9 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
           <div className="p-4 rounded-xl bg-[var(--fuse-bg-tertiary)]">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-[var(--fuse-text-primary)]">{formatDuration(duration)}</p>
+                <p className="text-2xl font-bold text-[var(--fuse-text-primary)]">
+                  {formatDuration(duration)}
+                </p>
                 <p className="text-xs text-[var(--fuse-text-secondary)]">Duration</p>
               </div>
               <div>
@@ -89,7 +101,9 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
                 <p className="text-xs text-[var(--fuse-text-secondary)]">Clips</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-[var(--fuse-text-primary)]">~{estimatedSize}MB</p>
+                <p className="text-2xl font-bold text-[var(--fuse-text-primary)]">
+                  ~{estimatedSize}MB
+                </p>
                 <p className="text-xs text-[var(--fuse-text-secondary)]">Est. Size</p>
               </div>
             </div>
@@ -97,7 +111,9 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
 
           {/* Quality Preset */}
           <div>
-            <label className="block text-sm font-medium text-[var(--fuse-text-primary)] mb-2">Quality</label>
+            <label className="block text-sm font-medium text-[var(--fuse-text-primary)] mb-2">
+              Quality
+            </label>
             <div className="grid grid-cols-4 gap-2">
               {(['low', 'medium', 'high', 'ultra'] as QualityPreset[]).map((q) => (
                 <button
@@ -117,7 +133,9 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
 
           {/* Resolution */}
           <div>
-            <label className="block text-sm font-medium text-[var(--fuse-text-primary)] mb-2">Resolution</label>
+            <label className="block text-sm font-medium text-[var(--fuse-text-primary)] mb-2">
+              Resolution
+            </label>
             <div className="grid grid-cols-3 gap-2">
               {(['720p', '1080p', '4k'] as Resolution[]).map((r) => (
                 <button
@@ -163,7 +181,7 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
           {isExporting && (
             <div className="space-y-2">
               <div className="h-2 rounded-full bg-[var(--fuse-bg-tertiary)] overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-[var(--fuse-accent)] transition-all duration-100"
                   style={{ width: `${progress}%` }}
                 />
@@ -197,7 +215,12 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
             ) : (
               <>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                  />
                 </svg>
                 Export MP4
               </>
@@ -214,4 +237,3 @@ function formatDuration(seconds: number): string {
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
-
