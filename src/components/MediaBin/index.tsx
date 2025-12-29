@@ -34,6 +34,8 @@ export default function MediaBin() {
           continue;
         }
 
+        const mediaType: 'video' | 'audio' = file.type.startsWith('audio/') ? 'audio' : 'video';
+
         try {
           // Store file in IndexedDB
           const fileId = await storeFile(file);
@@ -43,10 +45,10 @@ export default function MediaBin() {
           if (!fileData) continue;
 
           const blob = new Blob([fileData], { type: file.type });
-          const videoFile = new File([blob], file.name, { type: file.type });
+          const demuxFileInput = new File([blob], file.name, { type: file.type });
 
           const info = await new Promise<VideoInfo>((resolve, reject) => {
-            demuxFile(videoFile, {
+            demuxFile(demuxFileInput, {
               onInfo: resolve,
               onVideoSample: () => {},
               onAudioSample: () => {},
@@ -54,26 +56,26 @@ export default function MediaBin() {
             });
           });
 
-          const mediaItem: MediaItem = {
+          const sourceId = addSource({
             id: fileId,
             name: file.name,
-            type: 'video',
+            type: mediaType,
+            duration: info.duration,
+            width: info.width,
+            height: info.height,
+            codec: info.videoCodec,
+          });
+
+          const mediaItem: MediaItem = {
+            id: sourceId,
+            name: file.name,
+            type: mediaType,
             duration: info.duration,
             width: info.width,
             height: info.height,
           };
 
           setMediaItems((prev) => [...prev, mediaItem]);
-
-          // Add to sources
-          addSource({
-            name: file.name,
-            type: 'video',
-            duration: info.duration,
-            width: info.width,
-            height: info.height,
-            codec: info.videoCodec,
-          });
         } catch (error) {
           console.error('Failed to import file:', error);
         }
@@ -105,16 +107,16 @@ export default function MediaBin() {
   const handleAddToTimeline = useCallback(
     (item: MediaItem) => {
       // Find the first video track
-      const videoTrack = tracks.find((t) => t.type === 'video');
-      if (!videoTrack) return;
+      const targetTrack = tracks.find((t) => t.type === item.type);
+      if (!targetTrack) return;
 
       // Calculate start time (after last clip)
-      const lastClip = videoTrack.clips[videoTrack.clips.length - 1];
+      const lastClip = targetTrack.clips[targetTrack.clips.length - 1];
       const startTime = lastClip ? lastClip.startTime + lastClip.duration : 0;
 
       addClip({
-        type: 'video',
-        trackId: videoTrack.id,
+        type: item.type,
+        trackId: targetTrack.id,
         sourceId: item.id,
         startTime,
         duration: item.duration,

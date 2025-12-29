@@ -70,7 +70,7 @@ export interface TimelineState {
   moveClip: (clipId: string, newTrackId: string, newStartTime: number) => void;
   splitClip: (clipId: string, splitTime: number) => void;
 
-  addSource: (source: Omit<SourceFile, 'id'>) => string;
+  addSource: (source: Omit<SourceFile, 'id'> & { id?: string }) => string;
   removeSource: (sourceId: string) => void;
 
   setCurrentTime: (time: number) => void;
@@ -231,9 +231,11 @@ export const useTimelineStore = create<TimelineState>()(
 
     // Source actions
     addSource: (source) => {
-      const id = generateId();
+      const { id: providedId, ...rest } = source;
+      const id = providedId ?? generateId();
+
       set((state) => {
-        state.sources.push({ ...source, id });
+        state.sources.push({ ...rest, id });
       });
       return id;
     },

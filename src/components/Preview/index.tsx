@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTimelineStore } from '../../store/timeline';
+import { useVideoPlayer } from '../../hooks/useVideoPlayer';
+import { getFileData } from '../../lib/storage';
 
 export default function Preview() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const decodedSourcesRef = useRef<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 1280, height: 720 });
+
+  // Use requestFrame instead of seekTo - it has jump detection built in
+  const { canvasRef, isReady, decodeVideo, requestFrame, renderFrame } = useVideoPlayer();
 
   const currentTime = useTimelineStore((s) => s.currentTime);
   const isPlaying = useTimelineStore((s) => s.isPlaying);
@@ -12,6 +17,7 @@ export default function Preview() {
   const setIsPlaying = useTimelineStore((s) => s.setIsPlaying);
   const duration = useTimelineStore((s) => s.duration);
   const tracks = useTimelineStore((s) => s.tracks);
+  const sources = useTimelineStore((s) => s.sources);
 
   // Handle container resize
   useEffect(() => {
@@ -38,78 +44,78 @@ export default function Preview() {
     return () => observer.disconnect();
   }, []);
 
-  // Render frame
-  const renderFrame = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  // Find all active video clips at a given time
+  const findActiveVideoClips = useCallback(
+    (time: number) => {
+      return tracks
+        .filter((t) => t.type === 'video' && !t.muted)
+        .flatMap((t) => t.clips)
+        .filter((c) => time >= c.startTime && time < c.startTime + c.duration);
+    },
+    [tracks],
+  );
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear canvas
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Find clips at current time
-    const videoClips = tracks
-      .filter((t) => t.type === 'video' && !t.muted)
-      .flatMap((t) => t.clips)
-      .filter((c) => currentTime >= c.startTime && currentTime < c.startTime + c.duration);
-
-    const textClips = tracks
-      .filter((t) => t.type === 'text' && !t.muted)
-      .flatMap((t) => t.clips)
-      .filter((c) => currentTime >= c.startTime && currentTime < c.startTime + c.duration);
-
-    // Render placeholder for video clips
-    if (videoClips.length > 0) {
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = '#4a4a6a';
-      ctx.font = '24px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Video Frame', canvas.width / 2, canvas.height / 2);
-      ctx.font = '14px sans-serif';
-      ctx.fillText(`Time: ${currentTime.toFixed(2)}s`, canvas.width / 2, canvas.height / 2 + 30);
-    }
-
-    // Render text overlays
-    for (const clip of textClips) {
-      if (clip.text) {
-        ctx.fillStyle = clip.color || '#ffffff';
-        ctx.font = `${clip.fontSize || 48}px ${clip.fontFamily || 'sans-serif'}`;
-        ctx.textAlign = 'center';
-        const x = clip.position?.x ?? canvas.width / 2;
-        const y = clip.position?.y ?? canvas.height - 100;
-        ctx.fillText(clip.text, x, y);
-      }
-    }
-  }, [currentTime, tracks]);
-
-  // Render on time change
+  // Decode sources as soon as the worker is ready
   useEffect(() => {
-    renderFrame();
-  }, [renderFrame]);
+    if (!isReady) return;
 
-  // Playback loop
+    const loadSources = async () => {
+      for (const source of sources) {
+        if (decodedSourcesRef.current.has(source.id)) continue;
+
+        const data = await getFileData(source.id);
+        if (!data) continue;
+
+        decodeVideo(data, source.id);
+        decodedSourcesRef.current.add(source.id);
+      }
+
+      // Render once after new sources start decoding
+      renderFrame();
+    };
+
+    loadSources();
+  }, [sources, isReady, decodeVideo, renderFrame]);
+
+  // Request frames for active clips when time changes (with jump detection)
+  // This replaces the old seekTo call - requestFrame only seeks when needed
+  useEffect(() => {
+    const activeClips = findActiveVideoClips(currentTime);
+
+    for (const clip of activeClips) {
+      const clipTime = clip.inPoint + (currentTime - clip.startTime);
+      // requestFrame uses jump detection - only seeks if delta > threshold
+      requestFrame(clip.sourceId, clipTime);
+    }
+
+    // Render the current frame
+    renderFrame();
+  }, [currentTime, findActiveVideoClips, requestFrame, renderFrame]);
+
+  // Playback loop - NO seeking here, just update time and render
+  // The frame request effect above handles seeking only when needed
   useEffect(() => {
     if (!isPlaying) return;
 
     let lastTime = performance.now();
+    let time = currentTime;
     let animationId: number;
 
     const tick = (now: number) => {
       const delta = (now - lastTime) / 1000;
       lastTime = now;
+      time += delta;
 
-      const newTime = currentTime + delta;
-      if (newTime >= duration) {
-        setCurrentTime(0);
+      // Loop or stop at end
+      if (time >= duration && duration > 0) {
+        time = 0;
         setIsPlaying(false);
-      } else {
-        setCurrentTime(newTime);
+        return;
       }
+
+      // Just update time - the useEffect above will handle frame requests
+      // with jump detection (continuous playback won't trigger seeks)
+      setCurrentTime(time);
 
       animationId = requestAnimationFrame(tick);
     };
@@ -135,13 +141,16 @@ export default function Preview() {
           <button
             onClick={() => setIsPlaying(!isPlaying)}
             className="w-16 h-16 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+            type="button"
           >
             {isPlaying ? (
               <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <title>Pause</title>
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             ) : (
               <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                <title>Play</title>
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
