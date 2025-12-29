@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* Custom CSS Variables for Fuse Editor Theme */
+:root {
+  --fuse-bg-primary: #0d0d0f;
+  --fuse-bg-secondary: #18181b;
+  --fuse-bg-tertiary: #27272a;
+  --fuse-accent: #f97316;
+  --fuse-accent-hover: #fb923c;
+  --fuse-text-primary: #fafafa;
+  --fuse-text-secondary: #a1a1aa;
+  --fuse-timeline-track: #1f1f23;
+  --fuse-clip-video: #3b82f6;
+  --fuse-clip-audio: #10b981;
+  --fuse-clip-text: #a855f7;
+  --fuse-playhead: #ef4444;
+}
+
+/* Base styles */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--fuse-bg-primary);
+  color: var(--fuse-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fuse-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fuse-bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--fuse-accent);
+  color: var(--fuse-text-primary);
+}
