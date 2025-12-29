@@ -1,0 +1,19 @@
+{
+  "name": "fuse-muxer",
+  "type": "module",
+  "collaborators": [
+    "Fuse Team"
+  ],
+  "description": "WebAssembly MP4 muxer for Fuse video editor",
+  "version": "0.1.0",
+  "files": [
+    "fuse_muxer_bg.wasm",
+    "fuse_muxer.js",
+    "fuse_muxer.d.ts"
+  ],
+  "main": "fuse_muxer.js",
+  "types": "fuse_muxer.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

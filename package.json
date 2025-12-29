@@ -19,6 +19,9 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:coverage": "vitest run --coverage",
     "fixtures:download": "./tests/fixtures/download.sh",
+    "wasm:build": "npm run wasm:build:muxer && npm run wasm:build:audio-mixer",
+    "wasm:build:muxer": "cd wasm/muxer && wasm-pack build --target web --out-dir ../../src/wasm/muxer",
+    "wasm:build:audio-mixer": "cd wasm/audio-mixer && wasm-pack build --target web --out-dir ../../src/wasm/audio-mixer",
     "typecheck": "tsc --noEmit",
     "ci": "npm run check:ci && npm run typecheck && npm run test:run"
   },

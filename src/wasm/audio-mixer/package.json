@@ -1,0 +1,19 @@
+{
+  "name": "fuse-audio-mixer",
+  "type": "module",
+  "collaborators": [
+    "Fuse Team"
+  ],
+  "description": "WebAssembly audio mixer for Fuse video editor",
+  "version": "0.1.0",
+  "files": [
+    "fuse_audio_mixer_bg.wasm",
+    "fuse_audio_mixer.js",
+    "fuse_audio_mixer.d.ts"
+  ],
+  "main": "fuse_audio_mixer.js",
+  "types": "fuse_audio_mixer.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

@@ -34,7 +34,7 @@ tests/fixtures/*.mp3
 tests/fixtures/*.wav
 tests/fixtures/*.ogg
 
-# Rust/WASM build artifacts
+# Rust/WASM build artifacts (source crates)
 wasm/*/target/
 wasm/*/pkg/
-*.wasm
+wasm/*/Cargo.lock
